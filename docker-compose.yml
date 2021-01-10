@@ -1,0 +1,61 @@
+# EDIT THE VOLUME PATHS IF YOU WANT THEM SOMEWHERE ELSE!!!
+# EDIT THE NODE.NAME FOR ELASTICSEARCH!!!
+# CHECK THE ELASTICSEARCH MEMORY ALLOCATIONS!!!
+
+version: '3.7'
+services:
+  elasticsearch:
+    container_name: metrics_elasticsearch
+    image: elasticsearch:7.10.1
+    restart: unless-stopped
+    environment:
+      - "node.name=saga.4825l.walter.fm"
+      - "discovery.type=single-node"
+      - "ES_JAVA_OPTS=-Xms4g -Xmx4g"
+      - "bootstrap.memory_lock=true"
+    ports:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+      - "elasticsearch:/usr/share/elasticsearch/data"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+
+  grafana:
+    container_name: metrics_grafana
+    image: grafana/grafana:7.3.6
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+      - opentsdb
+    links:
+      - elasticsearch
+      - opentsdb
+    environment:
+      - GF_INSTALL_PLUGINS=marcusolsson-dynamictext-panel,mxswat-separator-panel,smartmakers-trafficlight-panel,briangann-gauge-panel
+    ports:
+      - 3000:3000
+    volumes:
+      - "grafana:/var/lib/grafana"
+
+  kibana:
+    container_name: metrics_kibana
+    image: kibana:7.10.1
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    links:
+      - elasticsearch
+    #environment:
+    #  - SERVER_NAME
+    #  - SERVER_BASEPATH
+    #  - MONITORING_ENABLED
+    ports:
+      - 5601:5601
+    #volumes:
+    #  - "kibana.yml:/usr/share/kibana/config/kibana.yml"
